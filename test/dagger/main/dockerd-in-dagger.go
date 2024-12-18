@@ -84,7 +84,6 @@ func (R *runtime) clientHack() error {
 		return err
 	}
 
-	t = t.Pipeline("attach/daemon")
 	t, err = R.attachService(t, daemon)
 	if err != nil {
 		return err
@@ -92,7 +91,6 @@ func (R *runtime) clientHack() error {
 
 	t = t.WithEnvVariable("CACHE", time.Now().String())
 	// curl the registry
-	t = t.Pipeline("curl/registry")
 	t = t.WithExec([]string{"curl", "https://registry-1.docker.io"})
 	out, err := t.Stdout(R.ctx)
 	if err != nil {
@@ -101,7 +99,6 @@ func (R *runtime) clientHack() error {
 	fmt.Println(out)
 
 	// curl the daemon
-	t = t.Pipeline("curl/daemon")
 	t = t.WithExec([]string{"curl", "global-dockerd:2375/info"})
 	out, err = t.Stdout(R.ctx)
 	if err != nil {
@@ -110,7 +107,6 @@ func (R *runtime) clientHack() error {
 	fmt.Println(out)
 
 	// docker cli
-	t = t.Pipeline("docker/pull")
 	t = t.WithExec([]string{"docker", "pull", "hello-world"})
 	out, err = t.Stdout(R.ctx)
 	if err != nil {
@@ -118,7 +114,6 @@ func (R *runtime) clientHack() error {
 	}
 	fmt.Println(out)
 
-	t = t.Pipeline("docker/run")
 	t = t.WithExec([]string{"docker", "run", "hello-world"})
 	out, err = t.Stdout(R.ctx)
 	if err != nil {
@@ -134,7 +129,6 @@ func (R *runtime) clientHack() error {
 func (R *runtime) baseContainer() (*dagger.Container, error) {
 
 	c := R.client.Container().From(dockerVer + "-cli")
-	c = c.Pipeline("base/image")
 	c = c.WithMountedCache("/tmp", R.client.CacheVolume("shared-tmp"))
 	c = c.WithExec([]string{"apk", "add", "curl"})
 
@@ -144,7 +138,6 @@ func (R *runtime) baseContainer() (*dagger.Container, error) {
 func (R *runtime) daemonContainer() (*dagger.Container, error) {
 
 	c := R.client.Container().From(dockerVer + "-dind")
-	c = c.Pipeline("daemon/image")
 
 	c = c.WithMountedCache("/tmp", R.client.CacheVolume("shared-tmp"))
 	c = c.WithMountedCache("/var/lib/docker", R.client.CacheVolume("docker-cache"))
@@ -154,7 +147,7 @@ func (R *runtime) daemonContainer() (*dagger.Container, error) {
 
 	c = c.WithEnvVariable("CACHE", time.Now().String())
 	c = c.WithExec([]string{"curl", "https://registry-1.docker.io"})
-	c = c.WithExec(
+	c = c.WithEntrypoint(
 		[]string{
 			"dockerd",
 			"--log-level=warn",
@@ -162,21 +155,25 @@ func (R *runtime) daemonContainer() (*dagger.Container, error) {
 			"--tls=false",
 			"--debug",
 		},
-		dagger.ContainerWithExecOpts{InsecureRootCapabilities: true},
 	)
 	return c, nil
 }
 
 func (R *runtime) attachService(c, s *dagger.Container) (*dagger.Container, error) {
-	t := c.Pipeline("docker/service")
+	t := c
 	t = t.WithEnvVariable("DOCKER_HOST", "tcp://global-dockerd:2375")
-	t = t.WithServiceBinding("global-dockerd", s)
+	t = t.WithServiceBinding("global-dockerd", s.AsService(
+		dagger.ContainerAsServiceOpts{
+			UseEntrypoint: true,
+			InsecureRootCapabilities: true,
+		},
+	))
 
 	return t, nil
 }
 
 func (R *runtime) dockerInfo(c *dagger.Container) error {
-	t := c.Pipeline("docker/info")
+	t := c
 
 	t = t.WithExec([]string{"docker", "info"})
 
@@ -190,7 +187,7 @@ func (R *runtime) dockerInfo(c *dagger.Container) error {
 }
 
 func (R *runtime) dockerTest(c *dagger.Container) error {
-	t := c.Pipeline("docker/test")
+	t := c
 
 	t = t.WithEnvVariable("CACHE", time.Now().String())
 
@@ -213,7 +210,7 @@ func (R *runtime) dockerTest(c *dagger.Container) error {
 }
 
 func (R *runtime) daemonTest(c *dagger.Container) error {
-	t := c.Pipeline("daemon/test")
+	t := c
 
 	t = t.WithExec([]string{"ls", "-l", "/sys/fs"})
 

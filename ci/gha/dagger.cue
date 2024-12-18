@@ -21,7 +21,7 @@ ghacue.#Workflow & {
 			}
 
 			steps: [
-				common.Steps.go.setup & {#ver: "1.21.x"},
+				common.Steps.go.setup & {#ver: "1.23.x"},
 				common.Steps.checkout,
 				common.Steps.vars,
 				common.Steps.go.deps,
@@ -58,7 +58,7 @@ ghacue.#Workflow & {
 					name: "hof-in-dagger"
 					run:  "go run ./test/dagger/main/hof.go"
 					env: {
-						GITHUB_TOKEN:       "${{secrets.HOF_HOMEBREW_PAT}}"
+						GITHUB_TOKEN:       "${{secrets.GITHUB_TOKEN}}"
 						GITLAB_TOKEN:       "${{secrets.GITLAB_TOKEN}}"
 						BITBUCKET_USERNAME: "hofstadter"
 						BITBUCKET_PASSWORD: "${{secrets.BITBUCKET_TOKEN}}"
