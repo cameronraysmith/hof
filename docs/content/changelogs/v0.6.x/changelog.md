@@ -3,6 +3,16 @@ title: Changes by patch
 weight: 10
 ---
 
+
+## v0.6.10
+
+This release is mainly bugfixes and updates to some dependencies and tooling.
+
+No notable changes to features or the API.
+
+
+[v0.6.9...v0.6.10 diff on GitHub](https://github.com/hofstadter-io/hof/compare/v0.6.9...v0.6.10)
+
 ## v0.6.9
 
 This release brings more consistency and long-term stability to hof.
@@ -24,6 +34,8 @@ There are also new features like the CUE commands and the hof TUI.
 
 - several bug fixes in mod, containers, #hof
 - deal with macos woes on GHA
+
+[v0.6.8...v0.6.9 diff on GitHub](https://github.com/hofstadter-io/hof/compare/v0.6.8...v0.6.9)
 
 
 ## v0.6.8
